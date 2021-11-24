@@ -1,2 +1,1 @@
-# VD_assignments
-r_code 
+# Data visualization_assignments with tidyverse package 
