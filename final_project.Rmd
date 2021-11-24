@@ -1,0 +1,300 @@
+---
+title: "experiment1"
+author: "zhe&yifan"
+date: "2021/11/2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+options(scipen=999)
+library(tidyverse)
+library("xlsx")
+library(ggthemes)
+```
+```{r}
+free_listing<- read.xlsx('data_1.xlsx',sheetIndex=1)
+free_listing
+```
+```{r}
+free_listing<-data.frame(lapply(free_listing, function(v) {
+  if (is.character(v)) return(tolower(v))
+  else return(v)
+}))
+free_listing
+```
+```{r}
+taste_smell<-free_listing%>%select(!Colours&!Colour.category)
+taste_smell
+```
+```{r}
+taste_domain_specific<-taste_smell%>%select(Tastes,Tastes.Category)%>%filter(Tastes.Category=="domain-specific")%>%group_by(Tastes)%>%summarise(fre=length(Tastes))%>%arrange(desc(fre))
+taste_domain_specific
+
+```
+```{r}
+smell_domain_specific<-taste_smell%>%select(Smells,Smells.category)%>%filter(Smells.category=="domain-specific")%>%group_by(Smells)%>%summarise(fre=length(Smells))%>%arrange(desc(fre))
+smell_domain_specific
+```
+```{r}
+colour_total<-data.frame(t(c("colour",length(free_listing$Colours[!is.na(free_listing$Colours)]))))
+taste_total<-data.frame(t(c("taste",length(free_listing$Tastes[!is.na(free_listing$Tastes)]))))
+smell_total<-data.frame(t(c("smell",length(free_listing$Smells[!is.na(free_listing$Smells)]))))
+data_total<-rbind(colour_total,taste_total,smell_total)%>%mutate(class="total_n_term")
+
+colour_unique<-data.frame(t(c("colour",length(unique(free_listing$Colours[!is.na(free_listing$Colours)])))))
+taste_unique<-data.frame(t(c("taste",length(unique(free_listing$Tastes[!is.na(free_listing$Tastes)])))))
+smell_unique<-data.frame(t(c("smell",length(unique(free_listing$Smells[!is.na(free_listing$Smells)])))))
+data_unique<-rbind(colour_unique,taste_unique,smell_unique)%>%mutate(class="unique_n_term")
+all<-rbind(data_total,data_unique)
+all<-all%>%rename("type"=X1)%>%rename("number"=X2)
+all$number<-as.numeric(all$number)
+all
+```
+
+
+```{r}
+ggplot(all,aes(type,number,fill=class))+geom_bar(stat="identity",position="dodge")+theme_wsj()+
+scale_fill_wsj("rgby", "")+
+theme(axis.ticks.length=unit(0.5,'cm'))+
+guides(fill=guide_legend(title=NULL))
+```
+
+We can infer that it's much easier for international students to come up with colour words, while a bit harder for them to come up with smell and taste words. I guess regluar words for smell and taste are not many.(Here I just listed total terms people listed per domain,not on average)
+
+```{r}
+colour_selected<-free_listing%>%filter(Colour.category=="domain-specific")
+colour_selected2<-free_listing%>%filter(Colour.category=="source-based")
+colour_selected3<-free_listing%>%filter(Colour.category=="evaluative")
+colour_selected4<-free_listing%>%filter(Colour.category=="other")
+
+colour_domain_specific_total<-length(colour_selected$Colours[!is.na(colour_selected$Colours)])
+colour_domain_specific_unique<-length(unique(colour_selected$Colours[!is.na(colour_selected$Colours)]))
+
+colour_source_total<-length(colour_selected2$Colours[!is.na(colour_selected2$Colours)])
+colour_source_unique<-length(unique(colour_selected2$Colours[!is.na(colour_selected2$Colours)]))
+
+colour_evaluative_total<-length(colour_selected3$Colours[!is.na(colour_selected3$Colours)])
+colour_evaluative_unique<-length(unique(colour_selected3$Colours[!is.na(colour_selected3$Colours)]))
+
+colour_other_total<-length(colour_selected4$Colours[!is.na(colour_selected4$Colours)])
+colour_other_unique<-length(unique(colour_selected4$Colours[!is.na(colour_selected4$Colours)]))
+
+colour_ration_total<-data.frame(t(c("colour",colour_domain_specific_total/colour_source_total/colour_evaluative_total/colour_other_total)))%>%mutate(class="total")
+colour_ration_total<-colour_ration_total%>%rename("type"=X1)%>%rename("number"=X2)
+colour_ration_total$number<-as.numeric(colour_ration_total$number)
+
+colour_ration_unique<-data.frame(t(c("colour",colour_domain_specific_unique/colour_source_unique/colour_evaluative_unique/colour_other_unique)))%>%mutate(class="unique")
+colour_ration_unique<-colour_ration_unique%>%rename("type"=X1)%>%rename("number"=X2)
+colour_ration_unique$number<-as.numeric(colour_ration_unique$number)
+
+colour_ration_total
+colour_ration_unique
+```
+```{r}
+taste_selected<-free_listing%>%filter(Tastes.Category=="domain-specific")
+taste_selected2<-free_listing%>%filter(Tastes.Category=="source-based")
+taste_selected3<-free_listing%>%filter(Tastes.Category=="evaluative")
+taste_selected4<-free_listing%>%filter(Tastes.Category=="other")
+
+taste_domain_specific_total<-length(taste_selected$Tastes[!is.na(taste_selected$Tastes)])
+taste_domain_specific_unique<-length(unique(taste_selected$Tastes[!is.na(taste_selected$Tastes)]))
+
+taste_source_total<-length(taste_selected2$Tastes[!is.na(taste_selected2$Tastes)])
+taste_source_unique<-length(unique(taste_selected2$Tastes[!is.na(taste_selected2$Tastes)]))
+
+taste_evaluative_total<-length(taste_selected3$Tastes[!is.na(taste_selected3$Tastes)])
+taste_evaluative_unique<-length(unique(taste_selected3$Tastes[!is.na(taste_selected3$Tastes)]))
+
+taste_other_total<-length(taste_selected4$Tastes[!is.na(taste_selected4$Tastes)])
+taste_other_unique<-length(unique(taste_selected4$Tastes[!is.na(taste_selected4$Tastes)]))
+
+taste_ration_total<-data.frame(t(c("taste",taste_domain_specific_total/taste_source_total/taste_evaluative_total/taste_other_total)))%>%mutate(class="total")
+taste_ration_total<-taste_ration_total%>%rename("type"=X1)%>%rename("number"=X2)
+taste_ration_total$number<-as.numeric(taste_ration_total$number)
+
+taste_ration_unique<-data.frame(t(c("taste",taste_domain_specific_unique/taste_source_unique/taste_evaluative_unique/taste_other_unique)))%>%mutate(class="unique")
+taste_ration_unique<-taste_ration_unique%>%rename("type"=X1)%>%rename("number"=X2)
+taste_ration_unique$number<-as.numeric(taste_ration_unique$number)
+
+taste_ration_total
+taste_ration_unique
+
+
+```
+```{r}
+smell_selected<-free_listing%>%filter(Smells.category=="domain-specific")
+smell_selected2<-free_listing%>%filter(Smells.category=="source-based")
+smell_selected3<-free_listing%>%filter(Smells.category=="evaluative")
+smell_selected4<-free_listing%>%filter(Smells.category=="other")
+
+smell_domain_specific_total<-length(smell_selected$Smells[!is.na(smell_selected$Smells)])
+smell_domain_specific_unique<-length(unique(smell_selected$Smells[!is.na(smell_selected$Smells)]))
+
+smell_source_total<-length(smell_selected2$Smells[!is.na(smell_selected2$Smells)])
+smell_source_unique<-length(unique(smell_selected2$Smells[!is.na(smell_selected2$Smells)]))
+
+smell_evaluative_total<-length(smell_selected3$Smells[!is.na(smell_selected3$Smells)])
+smell_evaluative_unique<-length(unique(smell_selected3$Smells[!is.na(smell_selected3$Smells)]))
+
+smell_other_total<-length(smell_selected4$Smells[!is.na(smell_selected4$Smells)])
+smell_other_unique<-length(unique(smell_selected4$Smells[!is.na(smell_selected4$Smells)]))
+
+smell_ration_total<-data.frame(t(c("smell",smell_domain_specific_total/smell_source_total/smell_evaluative_total/smell_other_total)))%>%mutate(class="total")
+smell_ration_total<-smell_ration_total%>%rename("type"=X1)%>%rename("number"=X2)
+smell_ration_total$number<-as.numeric(smell_ration_total$number)
+
+smell_ration_unique<-data.frame(t(c("smell",smell_domain_specific_unique/smell_source_unique/smell_evaluative_unique/smell_other_unique)))%>%mutate(class="unique")
+smell_ration_unique<-smell_ration_unique%>%rename("type"=X1)%>%rename("number"=X2)
+smell_ration_unique$number<-as.numeric(smell_ration_unique$number)
+
+smell_ration_total
+smell_ration_unique
+```
+```{r}
+all_ratio<-rbind(colour_ration_total,colour_ration_unique,taste_ration_total,taste_ration_unique,smell_ration_total,smell_ration_unique)
+all_ratio$number<-round(all_ratio$number,3)
+all_ratio
+```
+```{r}
+ggplot(all_ratio,aes(type,number,fill=class))+geom_bar(stat="identity",position="dodge")+theme_wsj()+
+scale_fill_wsj("rgby", "")+
+theme(axis.ticks.length=unit(0.5,'cm'))+
+guides(fill=guide_legend(title=NULL))+geom_text(aes(label=number))
+```
+
+As we can see, colour always has the highest ratio of domain-specific/source-based/evaluative/other terms for type and tokens. Generally speaking, the ratio of type is higher than that of token across all three domains, which means domian-specific unique terms are more common than in other categories.
+
+Exemplar listing
+
+```{r}
+exe_listing<- read.xlsx('data_2.xlsx',sheetIndex=1)
+exe_listing<-data.frame(lapply(exe_listing, function(v) {
+  if (is.character(v)) return(tolower(v))
+  else return(v)
+}))
+exe_listing
+```
+```{r}
+new_listing<-c()
+for (i in 1:length(colnames(exe_listing))) {
+  new_listing<-c(new_listing,exe_listing[,i][!is.na(exe_listing[,i])])
+
+}
+new_listing<-data.frame(new_listing)
+new_listing
+```
+
+```{r}
+fre_table<-new_listing%>%group_by(new_listing)%>%summarise(fre=length(new_listing))%>%arrange(desc(fre))
+fre_table
+```
+```{r}
+exe_listing_2<-exe_listing%>%mutate(Term="id")
+exe_listing_2<-pivot_longer(exe_listing_2,cols = !Term)
+exe_listing_2<-exe_listing_2[,2:3]
+exe_listing_2
+```
+```{r}
+exe_listing_2<-na.omit(exe_listing_2)
+comparison1<-exe_listing_2%>%group_by(name)%>%summarise(total_n=length(name))
+comparison2<-exe_listing_2%>%group_by(name)%>%summarise(unique_n=length(unique(value)))
+comparison<-full_join(comparison2,comparison1,by="name")
+comparison<-comparison%>%mutate("typetokenratio"=round(unique_n/total_n,3))
+comparison
+```
+```{r}
+comparison1<-comparison1%>%mutate(class="total_n")%>%rename(number=total_n)
+comparison2<-comparison2%>%mutate(class="unique_n")%>%rename(number=unique_n)
+comparison_total<-rbind(comparison1,comparison2)
+comparison_total
+```
+```{r}
+ggplot(comparison_total,aes(name,number,fill=class))+geom_bar(stat="identity",position="dodge")+theme_wsj()+
+scale_fill_wsj("rgby", "")+
+theme(axis.ticks.length=unit(0.5,'cm'))+
+guides(fill=guide_legend(title=NULL))+geom_text(aes(label=number))
+```
+
+As the bar chart above demonstrated, sweet examples are easiest for international students to come up with, because everyone enjoys sweet candies. However, I am a little bit curious about why people can also think of so many stinky terms. Maybe our environment is becoming worse. Meanwhile, the bitter terms are the last thing that international students would like to think of.(Here I just listed total terms people listed per domain,not on average)
+
+
+```{r}
+ggplot(comparison,aes(x=name,y=typetokenratio,fill=name))+geom_bar(stat="identity",position="dodge")+geom_text(aes(label=typetokenratio))+scale_fill_brewer(palette = "Set1")
+```
+
+As the chart shows above, the type token ratios of each term are pretty close. Bitter, sour, and smelly are greater in lexical richness than other terms.
+
+
+Similarity between two languages
+
+I will choose Jaccard Index to calculate the similarity,because the math formula is quite handy and we just need calculate the set and union of two language data. The formula is shown as below:
+J(A,B) = |A intersection B| / |A union B|
+
+```{r}
+dutch_listing<- read.csv('dutchtasteexemplars.csv')
+dutch_listing<-data.frame(lapply(dutch_listing, function(v) {
+  if (is.character(v)) return(tolower(v))
+  else return(v)
+}))
+dutch_listing
+
+```
+
+```{r}
+dutch_listing_wider<-dutch_listing%>%pivot_wider(names_from = taste,values_from = english)
+dutch_listing_wider
+```
+```{r}
+dutch_sweet_v<-dutch_listing_wider$sweet[!is.na(dutch_listing_wider$sweet)]
+english_sweet_v<-exe_listing$SWEET[!is.na(exe_listing$SWEET)]
+sweet_intersection<-intersect(dutch_sweet_v,english_sweet_v)
+sweet_union<-union(dutch_sweet_v,english_sweet_v)
+sweet_similarity<-c("sweet_similarity",length(sweet_intersection)/length(sweet_union))
+sweet_similarity
+
+dutch_bitter_v<-dutch_listing_wider$bitter[!is.na(dutch_listing_wider$bitter)]
+english_bitter_v<-exe_listing$BITTER[!is.na(exe_listing$BITTER)]
+bitter_intersection<-intersect(dutch_bitter_v,english_bitter_v)
+bitter_union<-union(dutch_bitter_v,english_bitter_v)
+bitter_similarity<-c("bitter_similarity",length(bitter_intersection)/length(bitter_union))
+bitter_similarity
+
+dutch_sour_v<-dutch_listing_wider$sour[!is.na(dutch_listing_wider$sour)]
+english_sour_v<-exe_listing$SOUR[!is.na(exe_listing$SOUR)]
+sour_intersection<-intersect(dutch_sour_v,english_sour_v)
+sour_union<-union(dutch_sour_v,english_sour_v)
+sour_similarity<-c("sour_similarity",length(sour_intersection)/length(sour_union))
+sour_similarity
+
+dutch_spicy_v<-dutch_listing_wider$spicy[!is.na(dutch_listing_wider$spicy)]
+english_spicy_v<-exe_listing$SPICY[!is.na(exe_listing$SPICY)]
+spicy_intersection<-intersect(dutch_spicy_v,english_spicy_v)
+spicy_union<-union(dutch_spicy_v,english_spicy_v)
+spicy_similarity<-c("spicy_similarity",length(spicy_intersection)/length(spicy_union))
+spicy_similarity
+
+dutch_salty_v<-dutch_listing_wider$salty[!is.na(dutch_listing_wider$salty)]
+english_salty_v<-exe_listing$SALTY[!is.na(exe_listing$SALTY)]
+salty_intersection<-intersect(dutch_salty_v,english_salty_v)
+salty_union<-union(dutch_salty_v,english_salty_v)
+salty_similarity<-c("salty_similarity",length(salty_intersection)/length(salty_union))
+salty_similarity
+```
+
+```{r}
+similarity_table<-rbind.data.frame(t(sweet_similarity),t(bitter_similarity),t(sour_similarity),t(spicy_similarity),t(salty_similarity))
+similarity_table<-similarity_table%>%rename(class=V1)%>%rename(similarity_index=V2)
+similarity_table$similarity_index<-round(as.numeric(similarity_table$similarity_index),3)
+similarity_table
+```
+
+```{r}
+ggplot(similarity_table,aes(x=class,y=similarity_index,fill=class))+geom_bar(stat="identity",position="dodge")+geom_text(aes(label=similarity_index))+scale_fill_brewer(palette = "Set2")+coord_flip()
+
+```
+
+As the graph above showed, the sour term is the most similar one among all the taste terms between English and Dutch, while the spicy term is least similar. I assume international students always have different spicy foods from Dutch students.
